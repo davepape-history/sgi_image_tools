@@ -1,0 +1,201 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+<title>
+Dave's image tools
+</title>
+<link rev="made" href="mailto:pape@evl.uic.edu">
+</head>
+
+<body>
+<h1>Dave's image tools</h1>
+<h3> by Dave Pape (dave.pape@acm.org)
+</h3>
+
+The following programs are tools for manipulating SGI-format images,
+similar to Paul Haeberli's <i>imgtools</i> suite from SGI.
+<p>
+To recompile some of these programs you will need my
+libdave library.
+</p><p>
+
+</p><hr>
+
+<dl>
+<dt><b>addover</b> <i>underimage overimage outimage [xpos ypos]</i>
+</dt><dd>A cross between <b>/usr/sbin/add</b> and <b>/usr/sbin/over</b>,
+  this allows you to add
+  two images which are of different sizes. <i>overimage</i> is added to
+  <i>underimage</i> with its lower left corner at pixel location <i>xpos,ypos</i>.
+  <i>outimage</i> will be the same size as <i>underimage</i>. 
+
+</dd><dt><b>colorover</b> <i>inimage alphaimage outimage red green blue</i>
+</dt><dd>Similar to <b>matte</b> (see below), but simplified to overlay a
+  fixed color instead of a second image. <i>red,green,blue</i> specifies
+  the color to overlay; each channel should have values between 0 and 255.
+  The blending is done using the greyscale image <i>alphaimage</i> to
+  define the overlay color's opacity (0 alpha yields the color
+  of <i>inimage</i>, 255 alpha yields the overlay color).
+
+</dd><dt><b>colorunder</b> <i>inimage alphaimage outimage red green blue</i>
+</dt><dd>Same as <b>colorover</b>, except that the color is added under the
+  image (or, the image is added over the constant color). <i>alphaimage</i>
+  in this case defines the opacity of <i>inimage</i> - 0 yields the
+  underlay color, 255 yields the color of <i>inimage</i>.
+
+</dd><dt><b>dissolve</b> <i>inpattern1 inpattern2 outpattern startframe endframe [step]</i>
+</dt><dd> Creates a dissolve between two sequences of images. <i>inpattern1</i> and
+  <i>inpattern2</i> are printf format strings which, with the frame
+  number, will generate the file names for the frames of the two input
+  sequences (via a <i>sprintf(filename,pattern,framenum)</i>.
+  For example, "Frame.%04d.sgi" will cause <b>dissolve</b> to
+  read the file "Frame.0001.sgi" for frame number 1. <i>outpattern</i> is
+  a similar format string for the output file names. The frame numbers
+  go from <i>startframe</i> to <i>endframe</i>, optionally stepping by
+  <i>step</i>. The dissolve blends linearly between the two sequences;
+  at frame <i>startframe</i>, the output image will be identical to the
+  input image from sequence 1; at frame <i>endframe</i>, the output will
+  be identical to the input from sequence 2. A constant image can be used
+  for either input sequence by just giving the exact file name of the image.
+
+</dd><dt><b>fade</b> <i>inimage1 inimage2 outimage-basename frames</i>
+</dt><dd> Similar to <b>dissolve</b>, but creates a dissolve between two fixed
+  images rather than two sequences (it's faster than <b>dissolve</b>
+  for this special case). <i>inimage1</i> and <i>inimage2</i> are the
+  two input images. The output images will all have the name <i>outimage-basename</i>
+  followed by the frame number (zero padded to 4 digits). <i>frames</i> is
+  the number of frames the dissolve should take. For example,
+  <i>fade foo.sgi bar.sgi baz 10</i> will generate the files
+  <i>baz0000</i>, <i>baz0001</i>, ... <i>baz0009</i>.
+
+</dd><dt><b>fill-holes</b> <i>inimage.bw outimage.bw [num-passes]</i>
+</dt><dd> A little hack to fill in "holes" in a greyscale image. Every pixel
+  whose intensity value is 0 is replaced by the average of its non-zero
+  neighbors. If <i>num-passes</i> is greater than one, the process is
+  repeated this many times, allowing larger gaps to be filled in.
+  This program is handy for removing fine details such as grid lines
+  from a map. Note: only supports 1 band images; all remaining bands in
+  the image will be ignored.
+
+</dd><dt><b>fromfloat</b> <i>indata outimage.sgi xdim ydim [min max]</i>
+</dt><dd> Similar to <b>/usr/sbin/frombin</b>; converts a file of raw floating
+  point data into an SGI image. <i>indata</i> should be a file of unformatted
+  data - basically an array of <i>xdim</i>*<i>ydim</i> floats. The data
+  will all be scaled to the range 0 to 255 and written out as an <i>xdim</i>
+  by <i>ydim</i> greyscale image (<i>outimage.sgi</i>). If <i>min</i> and
+  <i>max</i> are not given, the data will be scaled so that the smallest
+  value in <i>indata</i> will map to pixel value 0, and the largest will
+  map to 255. If <i>min</i> and <i>max</i> are given, any input values less
+  than or equal to <i>min</i> will map to 0, and any input values greater
+  than or equal to <i>max</i> will map to 255. Values between the minimum
+  and maximum map linearly to the range 0 to 255.
+
+</dd><dt><b>fromhsv</b> <i>inimage.sgi outimage.sgi</i>
+</dt><dd> Reverses the conversion of <b>tohsv</b>. <i>inimage.sgi</i> is a three
+  band SGI image; band 0 is interpreted as hue, band 1 as saturation, and
+  band 2 as value. The pixel colors of the image are converted back to RGB space
+  and written out as <i>outimage.sgi</i>.
+
+</dd><dt><b>fromlong</b> <i>inimage.32 outimage.sgi xdim ydim [min max]</i>
+</dt><dd> Similar to <b>fromfloat</b>, except that the input data (<i>inimage.32</i>)
+  are signed long integers.
+
+</dd><dt><b>fromshort</b> <i>inimage.16 outimage.sgi xdim ydim [min max]</i>
+</dt><dd> Similar to <b>fromfloat</b>, except that the input data (<i>inimage.16</i>)
+  are signed short integers.
+
+</dd><dt><b>get-matte</b> <i>inimage.sgi outmatte.sgi bg-r bg-g bg-b [dist]</i>
+</dt><dd> Creates an alpha channel for an image which leaves out the given
+  background color. <i>inimage.sgi</i> is the input image; <i>outmatte.sgi</i>
+  is the one band output matte (alpha) image; <i>bg-r,bg-g,bg-b</i> is
+  the RGB color (values from 0 to 255) of the background. For any pixel
+  of <i>inimage.sgi</i> which is the background color, the value of the
+  corresponding pixel of <i>outmatte.sgi</i> is 0; otherwise, the output
+  value is 255. If <i>dist</i> is given, any pixel whose color's Euclidean
+  distance (in RGB space) from <i>bg-r,bg-g,bg-b</i> is less than or equal
+  to <i>dist</i> is considered part of the background.
+
+</dd><dt><b>imgcmp</b> <i>image1.sgi image2.sgi</i>
+</dt><dd> A <b>/bin/cmp</b> for images. Only the dimensions and pixel values of
+  the two images are compared (<b>cmp</b> might say that two image files are
+  different only due to meaningless header differences, or because one is
+  run-length-encoded and the other is not). A message is printed indicating
+  whether the two images are identical or if they are different (and where
+  they first differ).
+
+</dd><dt><b>imggrad</b> <i>inimage outimage</i>
+</dt><dd>Creates a gradient image of the (greyscale) input image. For each input
+  pixel, the corresponding output pixel has an value proportional to the
+  magnitude of the color gradient at that point. The output values are
+  scaled to cover the range 0 to 255. This can be used as a very simple
+  edge-detector.
+
+</dd><dt><b>imgrange</b> <i>in-image out-image new-min new-max</i>
+</dt><dd> The dual of <b>/usr/sbin/imgexp</b>. This will rescale an image's pixel
+  values so that they will cover the range <i>new-min</i> to <i>new-max</i>.
+
+</dd><dt><b>matte</b> <i>underimage overimage matteimage outimage [xpos ypos]</i>
+</dt><dd> Composites one image on top of another. <i>overimage</i> is blended
+  over <i>underimage</i> using <i>matteimage</i> as the alpha channel.
+  The output color of a pixel is a linear combination of the colors of
+  the corresponding pixels in the two input images; the value of the
+  pixel in the alpha image is the blending factor. When the alpha is 0,
+  the result is the color from <i>underimage</i>; when the alpha is 255,
+  the result is the color from <i>overimage</i>. If <i>xpos</i> and <i>ypos</i>
+  are given, <i>overimage</i> is composited with its lower left corner at
+  pixel coordinates (<i>xpos</i>,<i>ypos</i>) of <i>underimage</i>.
+
+</dd><dt><b>minmax</b> <i>[-&lt;type&gt;] file</i>
+</dt><dd> Finds the minimum and maximum values in a file of raw data (not an
+  SGI image). <i>type</i> is the type of the data in <i>file</i>; it can
+  be <i>float</i>, <i>long</i>, <i>ulong</i> (unsigned long), <i>short</i>,
+  <i>ushort</i>, <i>char</i>, or <i>uchar</i>. This can be useful in
+  conjunction with <b>fromfloat</b>, <b>fromlong</b>, and <b>fromshort</b>
+  to choose the min &amp; max values they use.
+
+</dd><dt><b>remapimg</b> <i>inimage outimage map.txt</i>
+</dt><dd> Remaps the pixel values of a single band image. <i>map.txt</i> is a
+  text file containing 256 numbers. The first number is the new value for
+  any pixels whose input value is 0; the second is the new value for pixels
+  with input value 1; etc.
+
+</dd><dt><b>replay</b> <i>[-s] [image ...]</i>
+</dt><dd> Displays a sequence of images in a GL window, similar to <b>/usr/sbin/movie</b>.
+  The image file names can either be given on the command line, or on standard
+  input. The <i>-s</i> flag runs <b>replay</b> in "slideshow" mode, where
+  each image is displayed until the left mouse button or the return key
+  is pressed; otherwise, the images are flipped through as quickly as they
+  can be read. The escape key will exit from the program at any time.
+  This is useful for examining a series of frames once, without loading
+  up memory with all the images.
+
+</dd><dt><b>smear</b> <i>inimage smearimage outimage [scale]</i>
+</dt><dd> "Smears" the colors in an image based on the gradient of another
+  (greyscale) image. For each pixel of <i>outimage</i>, the gradient vector
+  of the corresponding pixel in <i>smearimage</i> is computed;
+  this vector is added to the pixel's position, and the color at the resulting
+  position in <i>inimage</i> is used for the output color. The gradient vectors
+  are multiplied by <i>scale</i> if it is given.
+
+</dd><dt><b>tohsv</b> <i>inimage.sgi outimage.sgi</i>
+</dt><dd> Converts an image from RGB color space to HSV. For each pixel in the
+  input image, its RGB color values are converted to HSV values and written
+  to the output image; band 0 of <i>outimage.sgi</i> is the hue, band 1 is
+  the saturation, and band 2 is the value. This can be useful if you
+  wish to apply other image tools to the HSV values of an image; the
+  final result can then be converted back to RGB using <b>fromhsv</b>.
+
+</dd><dt><b>wipe</b> <i>inpattern1 inpattern2 wipepattern outpattern startframe endframe [step]</i>
+</dt><dd> A time-sequence versions of <b>matte</b>, for creating animated wipes
+  or other transitions between two sequences of images. <i>inpattern1</i> and
+  <i>inpattern2</i> are printf format strings for the two input sequences,
+  as in <b>dissolve</b>; <i>wipepattern</i> is a format string for the alpha
+  channel; <i>outpattern</i> is a format string for the output images.
+  The frame numbers run from <i>startframe</i> to <i>endframe</i>, optionally
+  stepping by <i>step</i>. For each frame, the image from the second sequence
+  is composited over the image from the first sequence, using the "wipe"
+  image as the alpha channel, as in <b>matte</b>.
+
+</dd></dl>
+
+
+</body></html>
